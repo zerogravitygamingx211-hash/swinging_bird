@@ -5,44 +5,49 @@
 <title>Flappy Bird</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- AdSense Script (load once) -->
+<!-- PWA manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#70c5ce">
+
+<!-- AdSense Script -->
 <script async
   src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8318859337327104"
   crossorigin="anonymous"></script>
 
 <style>
-  body {
-    margin: 0;
-    background: #70c5ce; /* sky blue */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: Arial, sans-serif;
-  }
+body {
+  margin: 0;
+  background: #70c5ce; /* sky */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
 
-  canvas {
-    background: linear-gradient(#70c5ce, #b3ecff);
-    display: block;
-    border-bottom: 40px solid #4CAF50; /* grass */
-  }
+canvas {
+  background: linear-gradient(#70c5ce, #b3ecff);
+  display: block;
+  border-bottom: 40px solid #4CAF50; /* grass */
+}
 
-  #ad-container {
-    margin: 10px auto;
-    text-align: center;
-  }
+#ad-container {
+  margin: 10px auto;
+  text-align: center;
+}
 </style>
 </head>
-
 <body>
 
 <canvas id="game" width="360" height="520"></canvas>
 
-<!-- Ad ONLY at the bottom -->
+<!-- AdSense placeholder at the bottom -->
 <div id="ad-container">
   <ins class="adsbygoogle"
-       style="display:inline-block;width:320px;height:60px"
+       style="display:block"
        data-ad-client="ca-pub-8318859337327104"
-       data-ad-slot="9715102552"></ins>
+       data-ad-slot="9715102552"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
 </div>
 
 <script>
@@ -51,7 +56,7 @@
 
 <script>
 /* ======================
-   GAME SETUP
+   GAME VARIABLES
 ====================== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -95,11 +100,8 @@ document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
 function jump() {
-  if (!gameOver) {
-    bird.vel = bird.lift;
-  } else {
-    location.reload();
-  }
+  if (!gameOver) bird.vel = bird.lift;
+  else location.reload();
 }
 
 /* ======================
@@ -108,38 +110,28 @@ function jump() {
 function update() {
   if (gameOver) return;
 
-  // bird movement
   bird.vel += bird.gravity;
   bird.y += bird.vel;
 
-  if (bird.y + bird.r > canvas.height) {
-    gameOver = true;
-  }
+  if (bird.y + bird.r > canvas.height) gameOver = true;
 
-  // create pipes
-  if (frame % pipeInterval === 0) {
-    createPipe();
-  }
+  if (frame % pipeInterval === 0) createPipe();
 
-  // move pipes
   pipes.forEach(pipe => {
     pipe.x -= pipeSpeed;
 
-    // smooth up/down motion
+    // up/down sway
     if (!pipe.offset) pipe.offset = 0;
     if (!pipe.dir) pipe.dir = Math.random() > 0.5 ? 1 : -1;
     pipe.offset += 0.4 * pipe.dir;
     if (Math.abs(pipe.offset) > 40) pipe.dir *= -1;
 
-    const topHeight = pipe.centerY - pipeGap / 2 + pipe.offset;
-    const bottomY = pipe.centerY + pipeGap / 2 + pipe.offset;
+    const topHeight = pipe.centerY - pipeGap/2 + pipe.offset;
+    const bottomY = pipe.centerY + pipeGap/2 + pipe.offset;
 
-    // collision detection
-    if (
-      bird.x + bird.r > pipe.x &&
-      bird.x - bird.r < pipe.x + pipeWidth &&
-      (bird.y - bird.r < topHeight || bird.y + bird.r > bottomY)
-    ) {
+    // collision
+    if (bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + pipeWidth &&
+        (bird.y - bird.r < topHeight || bird.y + bird.r > bottomY)) {
       gameOver = true;
     }
 
@@ -165,8 +157,8 @@ function draw() {
   // pipes
   ctx.fillStyle = "#2ecc71";
   pipes.forEach(pipe => {
-    const topHeight = pipe.centerY - pipeGap / 2 + pipe.offset;
-    const bottomY = pipe.centerY + pipeGap / 2 + pipe.offset;
+    const topHeight = pipe.centerY - pipeGap/2 + pipe.offset;
+    const bottomY = pipe.centerY + pipeGap/2 + pipe.offset;
 
     ctx.fillRect(pipe.x, 0, pipeWidth, topHeight);
     ctx.fillRect(pipe.x, bottomY, pipeWidth, canvas.height - bottomY);
@@ -201,5 +193,15 @@ function loop() {
 loop();
 </script>
 
+<!-- PWA SERVICE WORKER -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js')
+    .then(() => console.log("Service Worker registered!"))
+    .catch(err => console.log("SW registration failed:", err));
+}
+</script>
+
 </body>
 </html>
+
