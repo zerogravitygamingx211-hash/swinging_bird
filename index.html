@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flappy Bird</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- AdSense Script (load once) -->
+<script async
+  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8318859337327104"
+  crossorigin="anonymous"></script>
+
+<style>
+  body {
+    margin: 0;
+    background: #70c5ce; /* sky blue */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+
+  canvas {
+    background: linear-gradient(#70c5ce, #b3ecff);
+    display: block;
+    border-bottom: 40px solid #4CAF50; /* grass */
+  }
+
+  #ad-container {
+    margin: 10px auto;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="game" width="360" height="520"></canvas>
+
+<!-- Ad ONLY at the bottom -->
+<div id="ad-container">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:320px;height:60px"
+       data-ad-client="ca-pub-8318859337327104"
+       data-ad-slot="9715102552"></ins>
+</div>
+
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+<script>
+/* ======================
+   GAME SETUP
+====================== */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let score = 0;
+let frame = 0;
+let gameOver = false;
+
+/* ======================
+   BIRD
+====================== */
+const bird = {
+  x: 80,
+  y: 200,
+  r: 12,
+  gravity: 0.5,
+  lift: -8,
+  vel: 0,
+  img: new Image()
+};
+bird.img.src = "flappy_1.gif";
+
+/* ======================
+   PIPES
+====================== */
+const pipes = [];
+const pipeWidth = 45;
+const pipeGap = 130;
+const pipeSpeed = 2;
+const pipeInterval = 90;
+
+function createPipe() {
+  const centerY = 100 + Math.random() * 200;
+  pipes.push({ x: canvas.width, centerY: centerY, passed: false });
+}
+
+/* ======================
+   CONTROLS
+====================== */
+document.addEventListener("keydown", jump);
+document.addEventListener("touchstart", jump);
+
+function jump() {
+  if (!gameOver) {
+    bird.vel = bird.lift;
+  } else {
+    location.reload();
+  }
+}
+
+/* ======================
+   UPDATE
+====================== */
+function update() {
+  if (gameOver) return;
+
+  // bird movement
+  bird.vel += bird.gravity;
+  bird.y += bird.vel;
+
+  if (bird.y + bird.r > canvas.height) {
+    gameOver = true;
+  }
+
+  // create pipes
+  if (frame % pipeInterval === 0) {
+    createPipe();
+  }
+
+  // move pipes
+  pipes.forEach(pipe => {
+    pipe.x -= pipeSpeed;
+
+    // smooth up/down motion
+    if (!pipe.offset) pipe.offset = 0;
+    if (!pipe.dir) pipe.dir = Math.random() > 0.5 ? 1 : -1;
+    pipe.offset += 0.4 * pipe.dir;
+    if (Math.abs(pipe.offset) > 40) pipe.dir *= -1;
+
+    const topHeight = pipe.centerY - pipeGap / 2 + pipe.offset;
+    const bottomY = pipe.centerY + pipeGap / 2 + pipe.offset;
+
+    // collision detection
+    if (
+      bird.x + bird.r > pipe.x &&
+      bird.x - bird.r < pipe.x + pipeWidth &&
+      (bird.y - bird.r < topHeight || bird.y + bird.r > bottomY)
+    ) {
+      gameOver = true;
+    }
+
+    // score
+    if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
+      score++;
+      pipe.passed = true;
+    }
+  });
+
+  frame++;
+}
+
+/* ======================
+   DRAW
+====================== */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // bird
+  ctx.drawImage(bird.img, bird.x - bird.r, bird.y - bird.r, bird.r*2, bird.r*2);
+
+  // pipes
+  ctx.fillStyle = "#2ecc71";
+  pipes.forEach(pipe => {
+    const topHeight = pipe.centerY - pipeGap / 2 + pipe.offset;
+    const bottomY = pipe.centerY + pipeGap / 2 + pipe.offset;
+
+    ctx.fillRect(pipe.x, 0, pipeWidth, topHeight);
+    ctx.fillRect(pipe.x, bottomY, pipeWidth, canvas.height - bottomY);
+  });
+
+  // score
+  ctx.fillStyle = "#fff";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  // game over
+  if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "28px Arial";
+    ctx.fillText("Game Over", 90, 240);
+    ctx.font = "16px Arial";
+    ctx.fillText("Tap / Press to Restart", 80, 270);
+  }
+}
+
+/* ======================
+   GAME LOOP
+====================== */
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
